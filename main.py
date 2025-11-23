@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.concurrency import run_in_threadpool
@@ -9,6 +10,13 @@ import secrets
 import database
 import utils
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await database.init_db()
@@ -17,10 +25,7 @@ async def lifespan(app: FastAPI):
     if not await database.has_any_token():
         new_token = secrets.token_urlsafe(32)
         await database.add_token(new_token)
-        print(f"\n{'='*60}")
-        print("WARNING: No API tokens found. Generated a new secure token:")
-        print(f"Token: {new_token}")
-        print(f"{'='*60}\n")
+        logger.warning(f"No API tokens found. Generated a new secure token: {new_token}")
 
     yield
 

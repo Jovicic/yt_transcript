@@ -1,10 +1,11 @@
 import pytest
 import database
 import aiosqlite
+import logging
 from main import app, lifespan
 
 @pytest.mark.asyncio
-async def test_lifespan_generates_token_if_none_exist(capsys):
+async def test_lifespan_generates_token_if_none_exist(caplog):
     async with aiosqlite.connect(database.DB_PATH) as db:
         await db.execute("DELETE FROM api_tokens")
         await db.commit()
@@ -13,8 +14,9 @@ async def test_lifespan_generates_token_if_none_exist(capsys):
     assert not await database.has_any_token()
 
     # Run lifespan
-    async with lifespan(app):
-        pass
+    with caplog.at_level(logging.WARNING):
+        async with lifespan(app):
+            pass
 
     # Verify a token was added
     assert await database.has_any_token()
@@ -29,18 +31,18 @@ async def test_lifespan_generates_token_if_none_exist(capsys):
             # secrets.token_urlsafe(32) produces approx 43 chars
             assert len(token) > 30
 
-    # Verify the output was printed
-    captured = capsys.readouterr()
-    assert "WARNING: No API tokens found. Generated a new secure token:" in captured.out
-    assert f"Token: {token}" in captured.out
+    # Verify the output was logged
+    assert "No API tokens found. Generated a new secure token:" in caplog.text
+    assert token in caplog.text
 
 @pytest.mark.asyncio
-async def test_lifespan_does_not_generate_token_if_exists(capsys):
+async def test_lifespan_does_not_generate_token_if_exists(caplog):
     assert await database.has_any_token()
 
     # Run lifespan
-    async with lifespan(app):
-        pass
+    with caplog.at_level(logging.WARNING):
+        async with lifespan(app):
+            pass
 
     async with aiosqlite.connect(database.DB_PATH) as db:
         async with db.execute("SELECT token FROM api_tokens") as cursor:
@@ -49,6 +51,5 @@ async def test_lifespan_does_not_generate_token_if_exists(capsys):
             assert len(rows) == 1
             assert rows[0][0] == "test-token"
 
-    # Verify no warning was printed
-    captured = capsys.readouterr()
-    assert "WARNING: No API tokens found" not in captured.out
+    # Verify no warning was logged
+    assert "No API tokens found" not in caplog.text
