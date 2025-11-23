@@ -33,4 +33,7 @@ RUN mkdir -p /data && \
 # Switch to non-root user
 USER appuser
 
+# Add virtual environment to PATH
+ENV PATH="/app/.venv/bin:$PATH"
+
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
