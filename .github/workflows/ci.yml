@@ -2,9 +2,9 @@ name: CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
   workflow_dispatch:
 
 env:
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: "pyproject.toml"
+          python-version-file: ".python-version"
 
       - name: Install dependencies
         run: uv sync --locked
@@ -36,8 +36,8 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    # Only push on main branch
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Only push on master branch
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     permissions:
       contents: read
       packages: write
