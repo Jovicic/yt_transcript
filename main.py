@@ -53,6 +53,21 @@ async def global_exception_handler(request: Request, exc: Exception):
 class TranscriptRequest(BaseModel):
     video_id: str
 
+class TranscriptItem(BaseModel):
+    text: str
+    start: float
+    duration: float
+
+class TranscriptResponse(BaseModel):
+    video_id: str
+    transcript: list[TranscriptItem]
+    source: str
+
+class TranscriptSimpleResponse(BaseModel):
+    video_id: str
+    transcript: str
+    source: str
+
 async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
     is_valid = await database.is_token_valid(token)
@@ -85,7 +100,7 @@ async def get_transcript_data(video_id: str):
     await database.save_transcript(video_id, transcript)
     return transcript, "youtube"
 
-@app.post("/transcript")
+@app.post("/transcript", response_model=TranscriptResponse)
 async def get_transcript(request: TranscriptRequest, token: str = Depends(verify_token)):
     video_id_input = request.video_id
 
@@ -99,7 +114,7 @@ async def get_transcript(request: TranscriptRequest, token: str = Depends(verify
 
     return {"video_id": video_id, "transcript": transcript, "source": source}
 
-@app.post("/transcript_simple")
+@app.post("/transcript_simple", response_model=TranscriptSimpleResponse)
 async def get_transcript_simple(request: TranscriptRequest, token: str = Depends(verify_token)):
     video_id_input = request.video_id
 
