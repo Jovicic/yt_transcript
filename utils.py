@@ -1,6 +1,8 @@
 from urllib.parse import urlparse, parse_qs
 from typing import Optional
+import os
 from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.proxies import WebshareProxyConfig
 
 def extract_video_id(input_str: str) -> Optional[str]:
     """
@@ -24,7 +26,20 @@ def fetch_youtube_transcript(video_id: str):
     """
     # list_transcripts returns a TranscriptList object
     # We need to instantiate the API class first
-    transcript_list = YouTubeTranscriptApi().list(video_id)
+    proxy_username = os.environ.get("WEBSHARE_USERNAME")
+    proxy_password = os.environ.get("WEBSHARE_PASSWORD")
+
+    if proxy_username and proxy_password:
+        ytt_api = YouTubeTranscriptApi(
+            proxy_config=WebshareProxyConfig(
+                proxy_username=proxy_username,
+                proxy_password=proxy_password,
+            )
+        )
+    else:
+        ytt_api = YouTubeTranscriptApi()
+
+    transcript_list = ytt_api.list(video_id)
 
     # Filter for English transcripts (generated or manual)
     # We prefer manual english, but fallback to generated if needed, or translation?

@@ -9,6 +9,8 @@ services:
       - "8885:8000"
     environment:
       - DB_PATH=/data/transcripts.db
+      - WEBSHARE_USERNAME=${WEBSHARE_USERNAME}
+      - WEBSHARE_PASSWORD=${WEBSHARE_PASSWORD}
     volumes:
       - ./data:/data
     restart: unless-stopped
