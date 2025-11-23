@@ -31,16 +31,21 @@ def fetch_youtube_transcript(video_id: str):
     # The requirement says "only interested in english transcription language".
     # find_transcript(['en']) looks for manually created English transcripts.
     # If we want to support auto-generated English as well, we might need to be more flexible.
-    # Usually find_transcript(['en']) is strict.
-    # Let's try to find 'en' first.
 
-    try:
-        transcript = transcript_list.find_transcript(['en'])
-    except Exception:
-        # If strict 'en' not found, maybe 'en-US', 'en-GB' etc?
-        # Or maybe auto-generated English?
-        # For now, let's stick to the library's find_transcript which supports a list of language codes.
-        # We can provide a list of english variants.
-        transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
+    # We search for standard English variants. find_transcript will pick the first available one.
+    transcript = transcript_list.find_transcript(['en', 'en-US', 'en-GB'])
 
-    return transcript.fetch()
+    # fetch() returns a list of dictionaries, but sometimes it might be wrapped or behave differently?
+    # Let's ensure we return a pure list of dicts.
+    fetched_data = transcript.fetch()
+
+    # Convert to list of dicts manually to ensure JSON serializability
+    # and avoid 'FetchedTranscriptSnippet object is not iterable' error
+    return [
+        {
+            "text": item["text"] if isinstance(item, dict) else item.text,
+            "start": item["start"] if isinstance(item, dict) else item.start,
+            "duration": item["duration"] if isinstance(item, dict) else item.duration,
+        }
+        for item in fetched_data
+    ]
